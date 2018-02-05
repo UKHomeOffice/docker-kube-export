@@ -10,7 +10,8 @@ DATESTAMP=`date +%Y%m%d_%H%M`
 BACKUP_PATH=${BACKUP_PATH:-/tmp}
 BACKUP_FILE=${BACKUP_PATH}/kube_resources.yaml
 BACKUP_TAR=${BACKUP_PATH}/kube_resources_${DATESTAMP}.tar.gz
-KUBECTL_CMD="kubectl --insecure-skip-tls-verify=true --token ${KUBE_TOKEN} --server https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}"
+
+KUBECTL_CMD=${KUBECTL_CMD:-"kubectl --insecure-skip-tls-verify=true --token ${KUBE_TOKEN} --server https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}"}
 
 function error_exit() {
   echo "ERROR: ${1}"
