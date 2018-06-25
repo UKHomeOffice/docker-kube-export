@@ -24,7 +24,7 @@ function info() {
 
 function move_s3() {
   local destpath=${S3_PATH}${BACKUP_TAR#${BACKUP_PATH}}
-
+  local s3cli_args=""
   # Noop when no backup
   [[ -z ${S3_PATH} ]] && \
     return 0
@@ -32,7 +32,16 @@ function move_s3() {
   # Check destination before uploading
   if [[ -f ${BACKUP_TAR} ]] ; then
     info "Uploading backed up file to s3"
-    aws s3 mv ${BACKUP_TAR} ${destpath} --sse aws:kms --sse-kms-key-id ${KMS_ID}
+    if [[ ${NO_SSL_VERIFY} ]] ; then
+      s3cli_args+=" --no-verify-ssl"
+    fi
+    if [[ -n ${AWS_ENDPOINT} ]] ; then
+      s3cli_args+=" --endpoint-url ${AWS_ENDPOINT}"
+    fi
+    if [[ -n ${KMS_ID} ]] ; then
+      s3cli_args+=" --sse aws:kms --sse-kms-key-id ${KMS_ID}"
+    fi
+      aws s3 mv ${s3cli_args} ${BACKUP_TAR} ${destpath}
   else
     error_exit "Backed up file does not exist"
     exit 1
