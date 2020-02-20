@@ -1,6 +1,6 @@
-FROM quay.io/ukhomeofficedigital/kd:v1.14.0
+FROM quay.io/ukhomeofficedigital/kd:v1.15.0
 
-RUN apk add --update --no-cache bash tar groff less python py-pip && \
+RUN apk add --update --no-cache bash tar groff less python py-pip jq && \
     pip install awscli && \
     apk --purge -v del py-pip
 

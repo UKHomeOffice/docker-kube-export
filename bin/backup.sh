@@ -19,9 +19,9 @@ KUBE_SERVER=${KUBE_SERVER:-https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_
 KUBE_TOKEN=${KUBE_TOKEN:-$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)}
 
 DATESTAMP=`date +%Y%m%d_%H%M`
-BACKUP_PATH=${BACKUP_PATH:-"/tmp"}
-BACKUP_FILE=${BACKUP_PATH}/kube_resources.yml
-BACKUP_TAR=${BACKUP_PATH}/kube_resources_${DATESTAMP}.tar.gz
+BACKUP_PATH="${BACKUP_PATH:-"/tmp"}"
+BACKUP_KUBE_PATH="${BACKUP_PATH}/kube-resources" # temporary backup path for kube resources
+BACKUP_TAR="${BACKUP_PATH}/kube_resources_${DATESTAMP}.tar.gz"
 
 function move_s3() {
   # No-op when no backup
@@ -35,7 +35,7 @@ function move_s3() {
 
   # Check destination before uploading
   if [[ -f ${BACKUP_TAR} ]]; then
-    info "Uploading backed up file to s3"
+    info "Uploading backed up file to S3"
     if [[ -n ${S3_CA_BUNDLE} ]]; then
       s3cli_args+=" --ca-bundle ${S3_CA_BUNDLE}"
     elif [[ ${S3_NO_SSL_VERIFY} == true ]]; then
@@ -56,17 +56,30 @@ function move_s3() {
 
 function tar_backup() {
   (
-    cd ${BACKUP_PATH}
-    tar -cvzf ${BACKUP_TAR} ${BACKUP_FILE}
-    rm -fr ${BACKUP_FILE}
+    cd "${BACKUP_PATH}"
+    tar -cvzf "${BACKUP_TAR}" -C "${BACKUP_KUBE_PATH}" .
+    rm -fr "${BACKUP_KUBE_PATH}"
   )
   info "Backed up to: ${BACKUP_TAR}"
 }
 
 # Creates a backup of the current cluster
 function clusterbackup() {
+  mkdir -p "${BACKUP_KUBE_PATH}"
+
   info "Starting Cluster Backup"
-  kd run get all,secret,configmap --export=true --all-namespaces=true -o yaml > ${BACKUP_FILE}
+
+  # backup each namespace's resources
+  for namespace in $(kd run get ns -o json | jq -r '.items[].metadata.name'); do
+    info "Starting export for ${namespace} namespace..."
+    kd run -n "${namespace}" get all,secret,configmap -o yaml > "${BACKUP_KUBE_PATH}/${namespace}_kube_resources.yml" &
+  done
+
+  log "Waiting for all exports to complete..."
+  wait
+
+  info "Export complete"
+
   tar_backup
   move_s3
 }
