@@ -66,7 +66,16 @@ function tar_backup() {
 # Creates a backup of the current cluster
 function clusterbackup() {
   info "Starting Cluster Backup"
-  kd run get all,secret,configmap --export=true --all-namespaces=true -o yaml > ${BACKUP_FILE}
+  # get yaml of resources without uneeded fields
+  kd run get all,secret,configmap --all-namespaces=true -o yaml | yq -y \
+    'del(
+      .metadata.creationTimestamp,
+      .metadata.generation,
+      .metadata.namespace,
+      .metadata.resourceVersion,
+      .metadata.uid,
+      .status
+    )' > ${BACKUP_FILE}
   tar_backup
   move_s3
 }
