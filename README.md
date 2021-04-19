@@ -11,7 +11,6 @@ The following environment variables can be passed in to configure kube export ba
 | ENVIRONMENT VARIABLE | DESCRIPTION | REQUIRED | DEFAULT VALUE |
 |----------------------|-------------|----------|---------------|
 | BACKUP_PATH | Set the directory to copy the kube-export backup to | N | `/tmp` |
-| INSECURE_SKIP_TLS_VERIFY | Skip TLS verify for the Kube API | N | `false` |
 | KUBE_SERVER | API endpoint for the Kubernetes Cluster | N | `${KUBERNETES_SERVICE_HOST}:${KUBERNETES_PORT_443_TCP_PORT}` |
 | KUBE_TOKEN | Access Token to interact with the API | N | `$(</var/run/secrets/kubernetes.io/serviceaccount/token)` |
 | S3_AWS_ENDPOINT | Custom S3 endpoint URL | N | NULL |
